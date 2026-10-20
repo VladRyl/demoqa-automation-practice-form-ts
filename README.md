@@ -52,7 +52,7 @@ Install Microsoft's **Playwright Test for VS Code** extension in Antigravity. Op
 
 ## GitHub Actions
 
-The workflow is [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml). It runs on pushes and pull requests targeting `main`, and can also be started manually. It first runs a setup check, then the tests. A failed setup prevents the test project from running; failures in individual tests do not stop the remaining tests. The HTML report is saved as a downloadable workflow artifact. On pushes to `main` and manual runs from `main`, the workflow publishes the latest report to GitHub Pages, including a fallback page if Playwright could not create a report.
+The workflow is [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml). It runs on pushes and pull requests targeting `main`, and can also be started manually. It first runs a setup check, then the tests. A failed setup prevents the test project from running; failures in individual tests do not stop the remaining tests. The workflow writes a **Test Execution Summary** with the environment, trigger, author, execution status, report links, and run logs. The Playwright HTML report is saved as a downloadable workflow artifact. On pushes to `main` and manual runs from `main`, the workflow publishes the latest report to GitHub Pages, including a fallback page if Playwright could not create a report.
 
 ### Enable GitHub Pages
 
