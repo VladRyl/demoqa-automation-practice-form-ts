@@ -1,0 +1,92 @@
+name: "🧪 Playwright POM — Run Tests & Publish Report"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: "🧪 Run Playwright tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Check out repository"
+        uses: actions/checkout@v6
+
+      - name: "🟢 Set up Node.js"
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: "📦 Install npm dependencies"
+        run: npm ci
+
+      - name: "🌐 Install Chromium and system dependencies"
+        run: npx playwright install --with-deps chromium
+
+      - name: "▶️ Run Playwright POM tests"
+        run: npx playwright test
+
+      - name: "🧾 Create fallback report if tests did not start"
+        if: always()
+        run: |
+          if [ ! -f playwright-report/index.html ]; then
+            mkdir -p playwright-report
+            cat > playwright-report/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+            <head><meta charset="utf-8"><title>Playwright report unavailable</title></head>
+            <body>
+              <h1>Playwright report unavailable</h1>
+              <p>The workflow failed before Playwright could generate its HTML report. Check the test job logs in GitHub Actions.</p>
+            </body>
+          </html>
+          EOF
+          fi
+
+      - name: "📦 Save HTML report as workflow artifact"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-report:
+    name: "🚀 Publish HTML report to GitHub Pages"
+    needs: test
+    if: always() && needs.test.result != 'cancelled' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: "📥 Download Playwright report"
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report
+
+      - name: "📄 Upload report for GitHub Pages"
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: playwright-report
+
+      - name: "🌍 Deploy report to GitHub Pages"
+        id: deployment
+        uses: actions/deploy-pages@v4
